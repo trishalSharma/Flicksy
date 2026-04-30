@@ -1,2 +1,1 @@
-A Community Based video Streamer Platform.
- 
+A Community Based Video Streamer Platform.
