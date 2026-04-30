@@ -1,0 +1,16 @@
+{
+  "name": "flicksy",
+  "version": "1.0.0",
+  "description": "A video streamer platform.",
+  "keywords": [
+    "javascipt",
+    "backend"
+  ],
+  "license": "ISC",
+  "author": "Trishal Sharma",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
