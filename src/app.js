@@ -9,6 +9,12 @@ app.use(cors({
     credential:true
 }));
 
+// configurations 
+
 app.use(express.json({limit:"16kb"}));
+app.use(express.urlencoded({extended:true,mlimit:"16kb"}));
+app.use(express.static("public"))
+
+app.use(cookieParser())
 
 export default app;
