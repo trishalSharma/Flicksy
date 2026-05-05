@@ -1,15 +1,18 @@
+import express from 'express';
 import dotenv from 'dotenv';
 import dbConnect from './db/index.js';
+import { app } from './app.js';
 
 dotenv.config({
     path:'./env'
 })
- 
 
 dbConnect()
 .then(()=> {
-    app.listen(process.env.PORT || 8000, () => {
-        console.log(`Server is running at Port: ${process.env.PORT}`); 
+   const  PORT = process.env.PORT || 8000;
+
+    app.listen(PORT, () => {
+        console.log(`Server is running at Port: ${PORT}`); 
     });
 })
 .catch((err) => {
