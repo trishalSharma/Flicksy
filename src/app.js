@@ -5,7 +5,7 @@ import cors from 'cors';
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("API working");
+    res.send("API Working");
 });
 
 app.use(cors({
