@@ -153,7 +153,7 @@ const logoutUser = asyncHandler( async (req, res) => {
 req.user._id,
 {
    $unset:{
-      refreshToken: 1
+      refreshToken: 1 
    }
 },
 {
@@ -182,8 +182,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-  
-  const user = User.findById(decodedToken?._id)
+        console.log("before user fetched")
+
+  const user = await User.findById(decodedToken?._id)
+  console.log("user fetched")
   
    if (!user) {
         throw new ApiError(401, "Invalid refresh token");
@@ -192,6 +194,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
      if(incomingRefreshToken !== user?.refreshToken){
         throw new ApiError(401, "Refresh token is expired or used")
      }
+     console.log("older token verified")
   
      const options={
         httpOnly:true,
@@ -199,6 +202,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
      }
   
      const {accessToken, newRefreshToken} = await generateAccessTokenAndRefreshToken(user._id)
+     console.log("new token generated")
   
      return res
               .status(200)
@@ -212,7 +216,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
                  )
               )
     } catch (error) {
-      throw new ApiError("401","Invalid refresh token")
+      throw new ApiError(  401,"New token not generated")
     }
       
 });
