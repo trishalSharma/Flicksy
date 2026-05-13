@@ -360,10 +360,10 @@ const channel = await User.aggregate([
    {
       $addFields:{
          subscriberCount:{$size:"$subscriber"},
-         subscribedTo:{$size: "subscribedTo"},
+         subscribedTo:{$size: "$subscribedTo"},
          isSubscribed:{
             $cond:{
-               if:{$in: [req.user?._id, "subscribers.subscriber"]},
+               if:{$in: [req.user?._id, "subscriber.subscriber"]},
                then:true,
                else:false
             }
@@ -375,7 +375,7 @@ const channel = await User.aggregate([
 fullName: 1,
 username:1,
 subscriberCount:1,
-subscriberTo:1,
+subscribedTo:1,
 isSubscribed:1,
 coverImage:1,
 avatar:1,
@@ -399,6 +399,57 @@ return res
 });
 
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+const user = User.aggregate([
+   {
+      $match:{
+         _id: new mongoose.Types.ObjectId(req.user?._id)
+      }
+   },
+   {
+      $lookup:{
+         from: "videos",
+         localField:"watchHistory",
+         foreignField:"_id",
+         as:"watchHistory",
+         pipeline:[
+            {
+               $lookup:{
+                  from:"users",
+                  localField:"owner",
+                  foreignField:"_id",
+                  as:"owner",
+                  pipeline:[
+                     {
+                        $project:{
+                           fullName:1,
+                           username:1,
+                           avatar:1
+                        }
+                     }
+                  ]
+               }
+            },{
+               $addFields:{
+                  owner:{
+                     $First:"$owner"
+                  }
+               }
+            }
+         ]
+      }
+   }
+])
+
+
+return res
+         .status(200)
+         .json(
+            new ApiResponse(200, user[0].watchHistory, "User watch history fetched successfully")     
+         )
+}); 
+
+
 export { 
    registerUser,
    loginUser,
@@ -409,5 +460,6 @@ export {
    updateAccountDetails,
    updateUserAvatar,
    updateUserCoverImage,
-   getUserChannelProfile
+   getUserChannelProfile,
+   getWatchHistory
 }
