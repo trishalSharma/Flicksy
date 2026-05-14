@@ -1,10 +1,10 @@
-import mongoose, {isValidObjectId} from "mongoose"
-import {Video} from "../models/video.model.js"
-import {User} from "../models/user.model.js"
-import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import mongoose, { isValidObjectId } from "mongoose"
+import { Video } from "../models/video.model.js"
+import { User } from "../models/user.model.js"
+import { ApiError } from "../utils/ApiError.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -152,7 +152,43 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
-})
+
+    if(!videoId) {
+        throw new ApiError(400, "Video Id is required");
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(videoId)){
+        throw new ApiError(404, "Invalid video Id");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video) {
+        throw new ApiError(404, "Video couldn't find");
+    }
+
+
+    const videoOwner = video.owner.toString() === req.user?._id.toString();
+
+    if (!videoOwner) {
+        throw new ApiError(403, "Unauthorized");
+    }
+
+    await deleteFromCloudinary(video.videoPublicId, "video");
+    await deleteFromCloudinary(video.thumbnailPublicId,"image");
+
+    await Video.findByIdAndDelete(videoId);
+
+    return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200, 
+                    {}, 
+                    "Video deleted successfully"
+                ));
+
+});
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
