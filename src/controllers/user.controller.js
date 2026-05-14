@@ -182,10 +182,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-        console.log("before user fetched")
 
   const user = await User.findById(decodedToken?._id)
-  console.log("user fetched")
+
   
    if (!user) {
         throw new ApiError(401, "Invalid refresh token");
@@ -194,7 +193,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
      if(incomingRefreshToken !== user?.refreshToken){
         throw new ApiError(401, "Refresh token is expired or used")
      }
-     console.log("older token verified")
   
      const options={
         httpOnly:true,
@@ -202,7 +200,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
      }
   
      const {accessToken, newRefreshToken} = await generateAccessTokenAndRefreshToken(user._id)
-     console.log("new token generated")
   
      return res
               .status(200)
@@ -222,18 +219,38 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler( async (req, res) => {
+   console.log(req.body)
 
    const {oldPassword, newPassword} =  req.body
 
+   if (!oldPassword || !newPassword) {
+      throw new ApiError(
+         400,
+         "Old password and new password are required"
+      );
+   }
+      if (oldPassword === newPassword) {
+   throw new ApiError(
+      400,
+      "New password cannot be same as old password"
+   );
+      }
+
    const user = await User.findById(req.user?._id)
    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+
 
    if (!isPasswordCorrect) {
       throw new ApiError(400, "Incorrect old Password");
    }
 
       user.password = newPassword
-      await user.save({validateBeforeSave: false})
+      await user.save()
+
+      if (!newPassword?.trim()) {
+   throw new ApiError(400, "New password is required");
+}
 
       return res
                .status(200)
@@ -244,7 +261,7 @@ const changeCurrentPassword = asyncHandler( async (req, res) => {
 const getCurrentUser = asyncHandler( async (req, res) => {
 return res  
          .status(200)
-         .json(200, req.user, "Current user fetched successfully")
+         .json(new ApiResponse(200, req.user, "Current user fetched successfully"))
 });
 
 const updateAccountDetails = asyncHandler(async (req, res ) => {
