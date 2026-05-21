@@ -44,7 +44,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         description: description.trim(),
         videoFile: videoUploading.url,
         thumbnail: thumbnailUploading.url,
-        owner:req.user?._id
+        owner:req.user?._id,
+        isPublished: true
     });
 
     const createdVideo = await Video.findById(video._id);
@@ -192,7 +193,34 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-})
+
+    if(!videoId){
+        throw new ApiError(400, "Video Id is required");
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(videoId)){
+        throw new ApiError(404, "video Id not found")
+    }
+
+    const video = await Video.findById(videoId);
+
+    if(!video){
+        throw new ApiError(404, "Video not found");
+    }
+
+    if(video.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(403, "Unauthorized");
+    }
+
+    video.isPublished = !video.isPublished;
+
+
+ await video.save({validateBeforeSave:false});
+
+return res
+         .status(200)
+         .json(new ApiResponse(200, video, "Video Toggled Successfully"));
+});
 
 export {
     getAllVideos,
