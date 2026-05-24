@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res) => {
-    
+
     //TODO: create tweet
 
     const { content } = req.body; 
@@ -42,10 +42,64 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
 const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
-})
+
+    const { tweetId } = req.params;
+    
+
+    if(!tweetId) {
+        throw new ApiError(400, "Tweet Id is required");
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(tweetId)){
+        throw new ApiError(400, "Tweet Id not valid")
+    }
+
+    const { content } = req.body;
+
+     if(!content || content.trim() === ""){
+        throw new ApiError(400, "Content is required");
+    }
+    if(content.trim().length > 280){
+        throw new ApiError(400, "Content must be less than 280 characters");
+    }
+
+    const tweet = await Tweet.FindById(tweetId)
+
+    if(!tweet){
+        throw new ApiError(404, "Tweet not found");
+    }
+
+    if(tweet.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(403, "You are not authorized to update this tweet");
+    }
+
+    tweet.content = content.trim();
+
+    await tweet.save({ validateBeforeSave: false });
+
+    const updatedTweet = await Tweet.findById(tweet._id)
+                                    .populate("owner", "username avatar");
+
+    return res
+             .status(200)
+             .json(new ApiResponse(
+                        200,
+                        updatedTweet,
+                        "Tweet updated Successfully"
+                    )
+                );
+});
 
 const deleteTweet = asyncHandler(async (req, res) => {
     //TODO: delete tweet
+
+    const { tweetId } = req.params;
+
+    if(!tweetId){
+        throw new ApiError(400, "tweet Id is requied");
+    }
+
+    
 })
 
 export {
