@@ -62,12 +62,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
         return res
                  .status(200)
-                 .json(new ApiResponse(200, { videos,
-                                            pagination:{
-                                                totalVideos,
-                                                currentPage:page,
-                                                totalPages,
-                                                limit,
+                 .json(new ApiResponse(200, {
+                                             videos,
+                                              pagination:{
+                                                  totalVideos,
+                                                  currentPage:page,
+                                                  totalPages,
+                                                  limit,
 
                                             },
                                         }, 
