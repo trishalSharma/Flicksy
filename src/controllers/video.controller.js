@@ -8,9 +8,74 @@ import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "desc", userId } = req.query
+
     //TODO: get all videos based on query, sort, pagination
-})
+
+    page = parseInt(page);    
+    limit = parseInt(limit);
+
+    if(page < 1) page = 1;
+    if(limit < 1) limit = 10;
+
+    const filter = {
+        isPublished:true,
+    };
+
+    if(query && query.trim() !== ""){
+        filter.$or = [
+            {
+                title:{
+                    $regex: query,
+                    $options:"i",
+                },
+
+                description:{
+                    $regex: query,
+                    $options: "i",
+                },
+            },
+        ];
+    }
+
+    if(userId && mongoose.Types.ObjectId.isValid(userId)){
+        filter.owner = userId;
+    }
+
+    const sortOptions = {};
+
+    sortOptions[sortBy] = 
+            sortType === 'asc'? 1 : -1; 
+
+    const skip = (page - 1) * limit;
+
+    const videos = await Video.find(filter)
+                              .sort(sortOptions) 
+                              .skip(skip)
+                              .limit(limit)
+                              .populate("owner","username avatar")
+                              .select("-__v");
+                              
+        const totalVideos = await Video.countDocuments(filter);
+
+        const totalPages = Math.ceil(totalVideos / limit);
+
+        return res
+                 .status(200)
+                 .json(new ApiResponse(200, { videos,
+                                            pagination:{
+                                                totalVideos,
+                                                currentPage:page,
+                                                totalPages,
+                                                limit,
+
+                                            },
+                                        }, 
+                                        "Videos fetched Successfully"
+                 )
+                );
+
+});
 
 const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body
