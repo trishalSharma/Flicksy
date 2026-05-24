@@ -38,7 +38,56 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
     // TODO: get user tweets
-})
+
+    let { page = 1, limit = 10, query, userId  } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if(page < 1) page = 1;
+    if(limit < 10) limit = 10;
+
+    const filter = {};
+
+     if(userId && mongoose.Types.ObjectId.isValid(userId)){
+            filter.owner = userId;
+        }
+
+         if (query && query.trim() !== "") {
+        filter.content = {
+            $regex: query,
+            $options: "i"
+        };
+    }
+
+        const skip = (page - 1 ) * limit;
+
+        const tweets = await Tweet.find(filter)
+             .sort({ createdAt: -1 })
+             .skip(skip)
+             .limit(limit)
+             .populate("owner", "username avatar")
+             .select("-__v");
+
+          const totalTweets =  await Tweet.countDocuments(filter);
+
+          const TotalPages = Math.ceil(
+            totalTweets / limit
+          );
+
+             return res
+                       .status(200)
+                       .json(new ApiResponse(200, {
+                            tweets,
+                            pagination:{
+                                totalTweets,
+                                currentPage:page,
+                                totalPages,
+                                limit
+                            }
+                       },
+                        "Tweets fetched successfully"));
+});
 
 const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
