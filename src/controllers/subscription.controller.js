@@ -67,8 +67,67 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+
+    let { page, limit } = req.query
     const { channelId } = req.params
-})
+    
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if( page < 1 ) page = 1;
+    if( limit < 1 ) limit = 10; 
+
+    if(!channelId){
+        throw new ApiError(400, "Channel Id is required");
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(channelId)){
+        throw new ApiError(400, "Invalid channel Id");
+    }
+
+
+    const channel = await User.findById(channelId);
+
+    if(!channel){
+        throw new ApiError(404, "Channel not found")
+    }
+
+    const skip = ( page - 1 ) * limit;
+
+   const subscribers =  await Subscription.find({ channel: channelId })
+                                          .populate("subscriber", "username avatar")
+                                          .sort({ createdAt: -1})
+                                          .skip(skip)
+                                          .limit(limit);
+
+    
+
+const totalSubscribers = await Subscription.countDocuments({channel: channelId});
+
+const TotalPages = Math.ceil(
+            totalSubscribers / limit
+          );
+
+return res
+          .status(200).json(
+            new ApiResponse(
+                200,
+                 {
+                    subscribers,
+                     pagination:{
+                        totalSubscribers,
+                        currentPage: page,
+                        totalpages,
+                        limit,
+
+          },
+        }, 
+        "subscribers fetched successfully"
+    )
+);
+
+});
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {

@@ -112,7 +112,7 @@ const updateTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Content must be less than 280 characters");
     }
 
-    const tweet = await Tweet.FindById(tweetId)
+    const tweet = await Tweet.findById(tweetId)
 
     if(!tweet){
         throw new ApiError(404, "Tweet not found");
