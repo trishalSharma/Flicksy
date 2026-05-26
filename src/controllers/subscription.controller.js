@@ -65,7 +65,6 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 });
 
 
-// controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
     let { page, limit } = req.query
@@ -129,10 +128,63 @@ return res
 
 });
 
-// controller to return channel list to which user has subscribed
+
 const getSubscribedChannels = asyncHandler(async (req, res) => {
+    
+    let {page, limit} = req.query
     const { subscriberId } = req.params
-})
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if ( page < 1 ) page = 1;
+    if( limit < 1 ) limit = 1;
+
+    if(!subscriberId){
+        throw new ApiError(400, "Subscriber Id required");
+    }
+
+    if(!mongoose.Types.ObjectId.isValid(subscriberId)){
+        throw new ApiError(400, "Invalid subscriber id");
+    }
+
+    const subscriber = await User.findById(subscriberId);
+
+    if(!subscriber){
+        throw new ApiError(404, "subscriber not found");
+    }
+
+    const skip = ( page - 1 ) * limit;
+
+
+    const subscribedChannels = await Subscription.find({subscriber: subscriberId})
+                                                 .populate("channel", "username avatar")
+                                                 .sort({createdAt: -1})
+                                                 .skip(skip)
+                                                 .limit(limit) 
+                                                 
+
+    const totalSubscribedChannels = await Subscription.countDocuments({subscriber:subscriberId});
+
+    const totalPages = Math.ceil(
+            totalSubscribedChannels / limit
+    );
+
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,{
+                subscribedchannels,
+            pagination:{
+                    totalSubscribedChannels,
+                    currentPage:page,
+                    totalPages,
+                    limit,
+            },
+            }, "Subscribed channels fetched successfully"
+        )
+    );    
+});
 
 export {
     toggleSubscription,
