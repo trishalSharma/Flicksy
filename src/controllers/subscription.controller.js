@@ -104,7 +104,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 const totalSubscribers = await Subscription.countDocuments({channel: channelId});
 
-const TotalPages = Math.ceil(
+const totalPages = Math.ceil(
             totalSubscribers / limit
           );
 
