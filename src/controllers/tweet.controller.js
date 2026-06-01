@@ -122,12 +122,17 @@ const updateTweet = asyncHandler(async (req, res) => {
         throw new ApiError(403, "You are not authorized to update this tweet");
     }
 
-    tweet.content = content.trim();
-
-    await tweet.save({ validateBeforeSave: false });
-
-    const updatedTweet = await Tweet.findById(tweet._id)
-                                    .populate("owner", "username avatar");
+    const updatedTweet = await Tweet.findByIdAndUpdate(
+        tweetId,
+        {
+            $set:{
+                content:content.trim(),
+            },
+        },
+        {
+            new:true
+        }
+    ).populate("owner, username avatar");
 
     return res
              .status(200)
